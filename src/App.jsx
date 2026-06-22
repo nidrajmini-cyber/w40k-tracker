@@ -361,7 +361,7 @@ function BatailleForm({ listes, bataille, onSave, onClose }) {
     }
   }, [form.score_moi, form.score_adversaire]);
 
-  const addSecondaire = () => setSecondaires(s => [...s, { joueur:"Moi", nom_secondaire:"", points_gagnes:0, points_max:15, notes:"" }]);
+  const addSecondaire = () => setSecondaires(s => [...s, { joueur:"Moi", nom_secondaire:"", points_gagnes:0, points_max:5, notes:"" }]);
   const setSecondaire = (i, k, v) => setSecondaires(s => s.map((x,j) => j===i ? {...x,[k]:v} : x));
   const removeSecondaire = (i) => setSecondaires(s => s.filter((_,j)=>j!==i));
 
@@ -429,10 +429,10 @@ function BatailleForm({ listes, bataille, onSave, onClose }) {
             </div>
           </div>
 
-          {/* Scénario */}
+          {/* Carte */}
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Scénario / Mission</label>
+              <label className="form-label">Carte</label>
               <input className="form-input" value={form.scenario} onChange={e=>set("scenario",e.target.value)} placeholder="Burden of Trust, Hidden Supplies..." />
             </div>
             <div className="form-group">
@@ -850,3 +850,4 @@ export default function App() {
     </div>
   );
 }
+
