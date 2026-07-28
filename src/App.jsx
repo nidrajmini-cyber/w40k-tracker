@@ -540,6 +540,8 @@ function BatailleForm({ listes, bataille, onSave, onClose }) {
 function BatailleDetail({ bataille, onClose, onEdit, onDelete }) {
   const [secondaires, setSecondaires] = useState([]);
   const [unites, setUnites] = useState([]);
+  const [coachAnalysis, setCoachAnalysis] = useState(bataille.coachanalysis || null);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
   useEffect(() => {
     supabase.from("w40k_secondaires").select("*").eq("bataille_id", bataille.id).then(({data}) => setSecondaires(data||[]));
@@ -548,9 +550,43 @@ function BatailleDetail({ bataille, onClose, onEdit, onDelete }) {
 
   const scoreCls = bataille.resultat === "Victoire" ? "win" : bataille.resultat === "Défaite" ? "lose" : "draw";
 
+  const handleCoachAnalysis = async () => {
+    setLoadingAnalysis(true);
+    try {
+      const response = await fetch("/api/coach-analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId: bataille.id }),
+      });
+      const data = await response.json();
+      if (data.analysis) {
+        setCoachAnalysis(data.analysis);
+      }
+    } catch (error) {
+      console.error("Coach API error:", error);
+      alert("Erreur lors de l'analyse du coach");
+    } finally {
+      setLoadingAnalysis(false);
+    }
+  };
+
+  const renderAnalysis = (text) => {
+    if (!text) return null;
+    const sections = text.split("--").map(s => s.trim()).filter(Boolean);
+    return (
+      <div style={{marginTop:20}}>
+        {sections.map((section, i) => (
+          <div key={i} style={{marginBottom:16,paddingBottom:16,borderBottom:"1px solid var(--border)"}}>
+            <div style={{fontSize:14,lineHeight:1.8,color:"var(--text)",whiteSpace:"pre-wrap"}}>{section}</div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{maxWidth:780}}>
+      <div className="modal" style={{maxWidth:780,maxHeight:"90vh",overflowY:"auto"}}>
         <button className="modal-close" onClick={onClose}>✕</button>
 
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:24,flexWrap:"wrap",gap:12}}>
@@ -616,9 +652,24 @@ function BatailleDetail({ bataille, onClose, onEdit, onDelete }) {
           </div>
         )}
 
-        <div style={{display:"flex",gap:12,justifyContent:"flex-end",marginTop:20}}>
+        {coachAnalysis && (
+          <div className="detail-section" style={{background:"rgba(201,168,76,0.05)",border:"1px solid rgba(201,168,76,0.2)",borderRadius:6,padding:16}}>
+            <div className="detail-section-title" style={{marginBottom:12}}>🧠 Analyse du Coach</div>
+            {renderAnalysis(coachAnalysis)}
+          </div>
+        )}
+
+        <div style={{display:"flex",gap:12,justifyContent:"flex-end",marginTop:20,flexWrap:"wrap"}}>
           <button className="btn btn-danger btn-sm" onClick={()=>onDelete(bataille.id)}>🗑 Supprimer</button>
           <button className="btn btn-ghost" onClick={onClose}>Fermer</button>
+          <button 
+            className="btn btn-primary btn-sm" 
+            onClick={handleCoachAnalysis}
+            disabled={loadingAnalysis}
+            style={{opacity: loadingAnalysis ? 0.6 : 1}}
+          >
+            {loadingAnalysis ? "⏳ Analyse..." : "🧠 Coach IA"}
+          </button>
           <button className="btn btn-primary btn-sm" onClick={()=>onEdit(bataille)}>✏ Modifier</button>
         </div>
       </div>
