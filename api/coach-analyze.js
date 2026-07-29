@@ -1,14 +1,6 @@
-const { createClient } = require("@supabase/supabase-js");
-const Anthropic = require("@anthropic-ai/sdk");
-
-const supabase = createClient(
-  "https://khmbmhmkmwjaljvicrsz.supabase.co",
-  process.env.SUPABASE_SERVICE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtobWJtaG1rbXdqYWxqdmljcnN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NzkwOTIsImV4cCI6MjA5NDE1NTA5Mn0.tfoNvKj4FYMq0yWpcNFUjNWpdLybZCzTGk1xdKEEZqc"
-);
-
-const anthropic = new Anthropic.default({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const SUPABASE_URL = "https://khmbmhmkmwjaljvicrsz.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtobWJtaG1rbXdqYWxqdmljcnN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NzkwOTIsImV4cCI6MjA5NDE1NTA5Mn0.tfoNvKj4FYMq0yWpcNFUjNWpdLybZCzTGk1xdKEEZqc";
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -22,27 +14,39 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: "gameId required" });
     }
 
-    // 1. Récupérer la bataille actuelle
-    const { data: bataille, error: battleErr } = await supabase
-      .from("w40k_batailles")
-      .select("*")
-      .eq("id", gameId)
-      .single();
+    console.log("🧠 Coach API: Analyzing game", gameId);
 
-    if (battleErr || !bataille) {
+    // 1. Récupérer la bataille actuelle
+    const battleRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/w40k_batailles?id=eq.${gameId}`,
+      {
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+        },
+      }
+    );
+
+    const battles = await battleRes.json();
+    if (!battles || battles.length === 0) {
       return res.status(404).json({ error: "Battle not found" });
     }
+    const bataille = battles[0];
+    console.log("✓ Battle found:", bataille.adversaire_faction);
 
-    // 2. Récupérer les 10 dernières parties du joueur avec la même armée
-    const { data: history, error: historyErr } = await supabase
-      .from("w40k_batailles")
-      .select("*")
-      .order("date", { ascending: false })
-      .limit(10);
+    // 2. Récupérer les 10 dernières parties
+    const historyRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/w40k_batailles?order=date.desc&limit=10`,
+      {
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+        },
+      }
+    );
 
-    if (historyErr) {
-      console.error("History fetch error:", historyErr);
-    }
+    const history = await historyRes.json();
+    console.log("✓ History fetched:", history?.length || 0, "battles");
 
     // 3. Construire le résumé de l'historique
     const historySummary =
@@ -56,7 +60,7 @@ module.exports = async function handler(req, res) {
         : "Pas d'historique disponible";
 
     // 4. Construire le prompt
-    const prompt = `Tu es un coach expert de Warhammer 40K V11. Tu analyses les parties de manière tactique, précise et utile. Tu parles comme un coach vétéran qui veut vraiment faire progresser son élève. Réponds TOUJOURS en français.
+    const prompt = `Tu es un coach expert de Warhammer 40K V11. Tu analyses les parties de manière tactique, précise et utile. Réponds TOUJOURS en français.
 
 Voici la partie à analyser :
 - Armée du joueur : ${bataille.liste_id || "Non spécifiée"}
@@ -67,59 +71,87 @@ Voici la partie à analyser :
 - Résultat : ${bataille.resultat}
 - Date : ${bataille.date}
 - Tour final : ${bataille.tour_fin || "N/A"}
-- Premier joueur : ${bataille.premier_joueur || "Inconnu"}
 
-Rapport détaillé de la partie :
+Rapport détaillé :
 ${bataille.notes || "Pas de notes détaillées"}
 
 Historique des 10 dernières parties :
 ${historySummary}
 
-Donne-moi une analyse en 4 sections structurées (utilise les tirets --- pour séparer) :
+Donne-moi une analyse en 4 sections (utilise les tirets -- pour séparer) :
 
 **1. Le tournant de la partie**
-Identifie le moment précis où la partie a basculé. Sois chirurgical et basé sur les infos fournie.
+Identifie le moment précis où la partie a basculé. Sois chirurgical.
 
 **2. Le pattern détecté**
-En comparant avec l'historique, repère UNE faiblesse récurrente que tu peux observer.
+En comparant avec l'historique, repère UNE faiblesse récurrente.
 
 **3. Le conseil actionnable**
-Donne UN conseil très concret pour la prochaine partie. Cite des distances, des positions de déploiement ou des stratagèmes.
+Donne UN conseil très concret pour la prochaine partie.
 
 **4. La question de coach**
-Pose UNE question qui force le joueur à réfléchir avant sa prochaine partie.
+Pose UNE question qui force le joueur à réfléchir.
 
----
-Format de réponse : utilise les -- comme séparateurs, SANS markdown gras ou italique.`;
+---`;
 
-    // 5. Appeler Claude
-    const message = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+    // 5. Appeler Claude via API HTTP
+    console.log("🔵 Calling Anthropic API...");
+    
+    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 1024,
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+      }),
     });
 
-    const analysis = message.content[0]?.type === "text" ? message.content[0].text : "";
+    const claudeData = await claudeRes.json();
 
-    // 6. Sauvegarder dans Supabase
-    const { error: updateErr } = await supabase
-      .from("w40k_batailles")
-      .update({ coachanalysis: analysis })
-      .eq("id", gameId);
-
-    if (updateErr) {
-      console.error("Update error:", updateErr);
-      return res.status(500).json({ error: "Failed to save analysis" });
+    if (!claudeRes.ok) {
+      console.error("Claude API error:", claudeData);
+      return res.status(500).json({ error: "Claude API failed", details: claudeData });
     }
 
+    const analysis = claudeData.content[0]?.text || "";
+    console.log("✓ Claude response received");
+
+    // 6. Sauvegarder dans Supabase
+    console.log("💾 Saving analysis to Supabase...");
+    
+    const updateRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/w40k_batailles?id=eq.${gameId}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({ coachanalysis: analysis }),
+      }
+    );
+
+    if (!updateRes.ok) {
+      const errData = await updateRes.json();
+      console.error("Supabase update error:", errData);
+      return res.status(500).json({ error: "Failed to save analysis", details: errData });
+    }
+
+    console.log("✓ Analysis saved and returned");
     return res.status(200).json({ analysis });
   } catch (error) {
-    console.error("Coach API error:", error);
-    return res.status(500).json({ error: error.message });
+    console.error("❌ Coach API error:", error);
+    return res.status(500).json({ error: error.message, stack: error.stack });
   }
-}
+};
