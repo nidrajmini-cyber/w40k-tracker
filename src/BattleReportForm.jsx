@@ -34,6 +34,16 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
     t3_adv_plan: '',
     t3_adv_menace: '',
     
+    t4_objectifs: '',
+    t4_execution: '',
+    t4_adv_plan: '',
+    t4_adv_menace: '',
+    
+    t5_objectifs: '',
+    t5_execution: '',
+    t5_adv_plan: '',
+    t5_adv_menace: '',
+    
     decision_1: '',
     decision_1_alt: '',
     decision_1_verdict: 'Bonne',
@@ -55,6 +65,27 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
   const [secondaires, setSecondaires] = useState([
     { nom: '', points_gagnes: 0, points_max: 0 }
   ]);
+
+  const SECONDAIRES_LIST = [
+    'Abattez-le',
+    'Assassinat',
+    'Attaque de Flanc',
+    'Derrière les Lignes Ennemies',
+    'Défendre le Bastion',
+    'Démonstration de Force',
+    'Engagement sur tous les Fronts',
+    'Fanal',
+    'Force Écrasante',
+    'Le Fardeau de la Confiance',
+    'Pas de Prisonnier',
+    'Pillage',
+    'Position Avancée',
+    'Position Centrale',
+    'Purification',
+    'Sécuriser le No Man\'s Land',
+    'Un Coup Décisif',
+    'Une Cible Tentante',
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -95,6 +126,18 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
           notes += `EXECUTION: ${formData.t3_execution}\n`;
           notes += `PLAN ADVERSE: ${formData.t3_adv_plan}\n`;
           notes += `MENACE ADV: ${formData.t3_adv_menace}\n`;
+          
+          notes += `\n═ T4 ═\n`;
+          notes += `OBJECTIFS: ${formData.t4_objectifs}\n`;
+          notes += `EXECUTION: ${formData.t4_execution}\n`;
+          notes += `PLAN ADVERSE: ${formData.t4_adv_plan}\n`;
+          notes += `MENACE ADV: ${formData.t4_adv_menace}\n`;
+          
+          notes += `\n═ T5 ═\n`;
+          notes += `OBJECTIFS: ${formData.t5_objectifs}\n`;
+          notes += `EXECUTION: ${formData.t5_execution}\n`;
+          notes += `PLAN ADVERSE: ${formData.t5_adv_plan}\n`;
+          notes += `MENACE ADV: ${formData.t5_adv_menace}\n`;
           
           notes += `\n═ DECISIONS ═\n`;
           notes += `- ${formData.decision_1}\n`;
@@ -313,12 +356,11 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
                   }}
                 >
                   <option value="">-- Sélectionne --</option>
-                  <option value="Reconnaissance">Reconnaissance (Table Quarters)</option>
-                  <option value="Purge the Foe">Purge the Foe</option>
-                  <option value="Priority Assets">Priority Assets</option>
+                  <option value="Balayage de Reconnaissance">Balayage de Reconnaissance</option>
+                  <option value="Ratissage">Ratissage</option>
+                  <option value="Réunir des Informations">Réunir des Informations</option>
+                  <option value="Surveiller l'Ennemi">Surveiller l'Ennemi</option>
                   <option value="Triangulation">Triangulation</option>
-                  <option value="Take and Hold">Take and Hold</option>
-                  <option value="Autre">Autre</option>
                 </select>
               </div>
             </div>
@@ -902,6 +944,176 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
             </div>
 
             <div style={{ 
+              background: '#3a2a1a', 
+              padding: '16px', 
+              borderRadius: '8px',
+              borderLeft: '4px solid #c9a84c',
+              marginTop: '12px'
+            }}>
+              <h4 style={{ margin: '0 0 12px 0', color: '#c9a84c' }}>T4 - Ton T4</h4>
+              
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Objectifs</label>
+              <input
+                type="text"
+                name="t4_objectifs"
+                value={formData.t4_objectifs}
+                onChange={handleChange}
+                placeholder="Qu'est-ce que tu voulais faire"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit',
+                  marginBottom: '12px'
+                }}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Exécution</label>
+              <input
+                type="text"
+                name="t4_execution"
+                value={formData.t4_execution}
+                onChange={handleChange}
+                placeholder="Qu'est-ce que tu as fait réellement"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit',
+                  marginBottom: '12px'
+                }}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Plan adverse</label>
+              <input
+                type="text"
+                name="t4_adv_plan"
+                value={formData.t4_adv_plan}
+                onChange={handleChange}
+                placeholder="Qu'est-ce que l'adversaire a cherché à faire"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit',
+                  marginBottom: '12px'
+                }}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Menace adverse</label>
+              <input
+                type="text"
+                name="t4_adv_menace"
+                value={formData.t4_adv_menace}
+                onChange={handleChange}
+                placeholder="Quelle menace l'adversaire a posée"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            <div style={{ 
+              background: '#3a2a1a', 
+              padding: '16px', 
+              borderRadius: '8px',
+              borderLeft: '4px solid #c9a84c',
+              marginTop: '12px'
+            }}>
+              <h4 style={{ margin: '0 0 12px 0', color: '#c9a84c' }}>T5 - Ton T5</h4>
+              
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Objectifs</label>
+              <input
+                type="text"
+                name="t5_objectifs"
+                value={formData.t5_objectifs}
+                onChange={handleChange}
+                placeholder="Qu'est-ce que tu voulais faire"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit',
+                  marginBottom: '12px'
+                }}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Exécution</label>
+              <input
+                type="text"
+                name="t5_execution"
+                value={formData.t5_execution}
+                onChange={handleChange}
+                placeholder="Qu'est-ce que tu as fait réellement"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit',
+                  marginBottom: '12px'
+                }}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Plan adverse</label>
+              <input
+                type="text"
+                name="t5_adv_plan"
+                value={formData.t5_adv_plan}
+                onChange={handleChange}
+                placeholder="Qu'est-ce que l'adversaire a cherché à faire"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit',
+                  marginBottom: '12px'
+                }}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Menace adverse</label>
+              <input
+                type="text"
+                name="t5_adv_menace"
+                value={formData.t5_adv_menace}
+                onChange={handleChange}
+                placeholder="Quelle menace l'adversaire a posée"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            <div style={{ 
               background: '#2a2a2a', 
               padding: '16px', 
               borderRadius: '8px',
@@ -927,15 +1139,13 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
                   {secondaires.map((sec, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid #444' }}>
                       <td style={{ padding: '8px' }}>
-                        <input
-                          type="text"
+                        <select
                           value={sec.nom}
                           onChange={(e) => {
                             const newSec = [...secondaires];
                             newSec[idx].nom = e.target.value;
                             setSecondaires(newSec);
                           }}
-                          placeholder="Ex: Incursion, Reconnaissance..."
                           style={{
                             width: '100%',
                             padding: '6px',
@@ -945,7 +1155,12 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
                             color: '#e0e0e0',
                             fontFamily: 'inherit'
                           }}
-                        />
+                        >
+                          <option value="">-- Sélectionne --</option>
+                          {SECONDAIRES_LIST.map((sec) => (
+                            <option key={sec} value={sec}>{sec}</option>
+                          ))}
+                        </select>
                       </td>
                       <td style={{ padding: '8px' }}>
                         <input
