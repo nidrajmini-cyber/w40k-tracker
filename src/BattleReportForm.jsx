@@ -301,7 +301,7 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
                   }}
                 >
                   <option value="">-- Sélectionne --</option>
-                  <option value="Toi">Toi</option>
+                  <option value="Moi">Moi</option>
                   <option value="Adversaire">Adversaire</option>
                 </select>
               </div>
@@ -359,7 +359,7 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
                 >
                   <option value="Victoire">✅ Victoire</option>
                   <option value="Défaite">❌ Défaite</option>
-                  <option value="Draw">🤝 Draw</option>
+                  <option value="Égalité">🤝 Égalité</option>
                 </select>
               </div>
             </div>
