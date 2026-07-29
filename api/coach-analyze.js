@@ -1,67 +1,57 @@
 module.exports = async function handler(req, res) {
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    console.log("=== DEBUG API KEY ===");
-    console.log("API Key exists:", !!apiKey);
-    console.log("API Key length:", apiKey?.length);
-    console.log("API Key starts with:", apiKey?.substring(0, 20));
-    console.log("API Key ends with:", apiKey?.substring(apiKey?.length - 20));
-    
-    // Vérifier les caractères problématiques
-    if (apiKey) {
-      for (let i = 0; i < apiKey.length; i++) {
-        const char = apiKey.charCodeAt(i);
-        if (char > 127) {
-          console.log(`NON-ASCII char at index ${i}: code ${char}`);
-        }
-      }
-    }
     
     if (!apiKey) {
-      return res.status(500).json({ error: "ANTHROPIC_API_KEY not set" });
+      return res.status(500).json({ error: "ANTHROPIC_API_KEY not configured" });
     }
 
-    const prompt = "Test";
-
-    console.log("Calling Anthropic API...");
+    // Structure correcte pour l'API Anthropic : system en top-level
+    const requestBody = {
+      model: "claude-3-5-sonnet-20241022",
+      max_tokens: 1000,
+      system: "Tu es un coach expert Warhammer 40K V11. Analyse tactiquement et réponds en français.",
+      messages: [
+        {
+          role: "user",
+          content: "Donne-moi un conseil de coach pour ma prochaine partie.",
+        }
+      ],
+    };
     
+    console.log("🔵 ANTHROPIC REQUEST:", JSON.stringify(requestBody, null, 2));
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json; charset=utf-8",
+        "Content-Type": "application/json",
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
       },
-      body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 100,
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-      }),
+      body: JSON.stringify(requestBody),
     });
 
-    console.log("Anthropic response status:", response.status);
+    console.log("📡 Response status:", response.status);
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error("Anthropic error:", errorData.substring(0, 500));
+      const errorText = await response.text();
+      console.error("❌ Anthropic API Error:", errorText.substring(0, 500));
       return res.status(response.status).json({ 
         error: "Anthropic API error",
-        status: response.status
+        status: response.status,
+        details: errorText.substring(0, 200)
       });
     }
 
     const data = await response.json();
-    const analysis = data.content[0]?.text || "No response";
+    console.log("✅ Response received from Anthropic");
+    
+    const analysis = data.content[0]?.text || "No analysis generated";
     
     return res.status(200).json({ analysis });
     
   } catch (error) {
-    console.error("Error:", error.message);
+    console.error("❌ Exception:", error.message);
     return res.status(500).json({ error: error.message });
   }
 };
