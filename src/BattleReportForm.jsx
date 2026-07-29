@@ -63,7 +63,7 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
   });
   
   const [secondaires, setSecondaires] = useState([
-    { nom: '', points_gagnes: 0, points_max: 0 }
+    { nom: '', points_gagnes: '', points_max: '' }
   ]);
 
   const SECONDAIRES_LIST = [
@@ -1173,6 +1173,7 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
                             newSec[idx].points_gagnes = e.target.value;
                             setSecondaires(newSec);
                           }}
+                          placeholder="0"
                           style={{
                             width: '100%',
                             padding: '6px',
@@ -1196,6 +1197,7 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
                             newSec[idx].points_max = e.target.value;
                             setSecondaires(newSec);
                           }}
+                          placeholder="0"
                           style={{
                             width: '100%',
                             padding: '6px',
@@ -1233,7 +1235,7 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
               </table>
               
               <button
-                onClick={() => setSecondaires([...secondaires, { nom: '', points_gagnes: 0, points_max: 0 }])}
+                onClick={() => setSecondaires([...secondaires, { nom: '', points_gagnes: '', points_max: '' }])}
                 style={{
                   marginTop: '12px',
                   padding: '8px 16px',
