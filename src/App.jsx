@@ -541,8 +541,6 @@ function BatailleForm({ listes, bataille, onSave, onClose }) {
 function BatailleDetail({ bataille, onClose, onEdit, onDelete }) {
   const [secondaires, setSecondaires] = useState([]);
   const [unites, setUnites] = useState([]);
-  const [coachAnalysis, setCoachAnalysis] = useState(bataille.coachanalysis || null);
-  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
   useEffect(() => {
     supabase.from("w40k_secondaires").select("*").eq("bataille_id", bataille.id).then(({data}) => setSecondaires(data||[]));
@@ -550,56 +548,6 @@ function BatailleDetail({ bataille, onClose, onEdit, onDelete }) {
   }, [bataille.id]);
 
   const scoreCls = bataille.resultat === "Victoire" ? "win" : bataille.resultat === "Défaite" ? "lose" : "draw";
-
-  const handleCoachAnalysis = async () => {
-    setLoadingAnalysis(true);
-    try {
-      console.log("🧠 Calling coach API with gameId:", bataille.id);
-      // Obtenir l'URL de base de l'app
-      const baseUrl = window.location.origin;
-      const apiUrl = `${baseUrl}/api/coach-analyze`;
-      console.log("📍 API URL:", apiUrl);
-      
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId: bataille.id }),
-      });
-      console.log("📡 Response status:", response.status);
-      const data = await response.json();
-      console.log("📦 Response data:", data);
-      if (!response.ok) {
-        alert(`Erreur API (${response.status}): ${data.error || "Erreur inconnue"}\n\nDétails: ${JSON.stringify(data)}`);
-        return;
-      }
-      if (data.analysis) {
-        console.log("✅ Analysis received, setting state...");
-        setCoachAnalysis(data.analysis);
-      } else {
-        console.error("❌ No analysis in response", data);
-        alert("Pas d'analyse reçue.\n\nRéponse: " + JSON.stringify(data, null, 2));
-      }
-    } catch (error) {
-      console.error("❌ Coach API error:", error);
-      alert("Erreur lors de l'analyse du coach: " + error.message);
-    } finally {
-      setLoadingAnalysis(false);
-    }
-  };
-
-  const renderAnalysis = (text) => {
-    if (!text) return null;
-    const sections = text.split("--").map(s => s.trim()).filter(Boolean);
-    return (
-      <div style={{marginTop:20}}>
-        {sections.map((section, i) => (
-          <div key={i} style={{marginBottom:16,paddingBottom:16,borderBottom:"1px solid var(--border)"}}>
-            <div style={{fontSize:14,lineHeight:1.8,color:"var(--text)",whiteSpace:"pre-wrap"}}>{section}</div>
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -669,24 +617,9 @@ function BatailleDetail({ bataille, onClose, onEdit, onDelete }) {
           </div>
         )}
 
-        {coachAnalysis && (
-          <div className="detail-section" style={{background:"rgba(201,168,76,0.05)",border:"1px solid rgba(201,168,76,0.2)",borderRadius:6,padding:16}}>
-            <div className="detail-section-title" style={{marginBottom:12}}>🧠 Analyse du Coach</div>
-            {renderAnalysis(coachAnalysis)}
-          </div>
-        )}
-
         <div style={{display:"flex",gap:12,justifyContent:"flex-end",marginTop:20,flexWrap:"wrap"}}>
           <button className="btn btn-danger btn-sm" onClick={()=>onDelete(bataille.id)}>🗑 Supprimer</button>
           <button className="btn btn-ghost" onClick={onClose}>Fermer</button>
-          <button 
-            className="btn btn-primary btn-sm" 
-            onClick={handleCoachAnalysis}
-            disabled={loadingAnalysis}
-            style={{opacity: loadingAnalysis ? 0.6 : 1}}
-          >
-            {loadingAnalysis ? "⏳ Analyse..." : "🧠 Coach IA"}
-          </button>
           <button className="btn btn-primary btn-sm" onClick={()=>onEdit(bataille)}>✏ Modifier</button>
         </div>
       </div>
