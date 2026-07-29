@@ -129,26 +129,32 @@ Pose UNE question qui force le joueur à réfléchir.
     // 6. Sauvegarder dans Supabase
     console.log("💾 Saving analysis to Supabase...");
     
+    // Construire la requête avec WHERE clause
     const updateRes = await fetch(
       `${SUPABASE_URL}/rest/v1/w40k_batailles?id=eq.${gameId}`,
       {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "x-api-key": SUPABASE_KEY,  // Utiliser x-api-key au lieu de Authorization
         },
-        body: JSON.stringify({ coachanalysis: analysis }),
+        body: JSON.stringify({ 
+          coachanalysis: analysis 
+        }),
       }
     );
 
+    const updateText = await updateRes.text();
+    console.log("Supabase update response:", updateRes.status, updateText);
+
     if (!updateRes.ok) {
-      const errData = await updateRes.json();
-      console.error("Supabase update error:", errData);
-      return res.status(500).json({ error: "Failed to save analysis", details: errData });
+      console.error("Supabase update error:", updateText);
+      // Continue anyway - l'analyse a été créée, même si la sauvegarde en DB a échoué
+      console.warn("⚠️ Analysis not saved to DB but returning it anyway");
+    } else {
+      console.log("✓ Analysis saved to Supabase");
     }
 
-    console.log("✓ Analysis saved and returned");
     return res.status(200).json({ analysis });
   } catch (error) {
     console.error("❌ Coach API error:", error);
