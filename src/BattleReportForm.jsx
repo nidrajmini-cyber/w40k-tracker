@@ -7,7 +7,6 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
     adversaire_faction: '',
     ta_liste: '',
     mission: '',
-    deployment: '',
     premier_joueur: '',
     tour_final: '',
     resultat: 'Défaite',
@@ -88,12 +87,11 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
             adversaire_faction: formData.adversaire_faction,
             liste_id: null, // À lier manuellement si nécessaire
             mission_principale: formData.mission,
-            deployment: formData.deployment,
             premier_joueur: formData.premier_joueur,
             score_moi: parseInt(formData.score_moi),
             score_adversaire: parseInt(formData.score_adversaire),
             resultat: formData.resultat,
-            tour_fin: formData.tour_final,
+            tour_fin: formData.tour_final ? parseInt(formData.tour_final.replace('T', '')) : null,
             notes: notes,
             created_at: new Date().toISOString(),
           }])
