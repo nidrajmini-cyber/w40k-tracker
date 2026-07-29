@@ -1,40 +1,44 @@
 module.exports = async function handler(req, res) {
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    console.log("Claude API key exists:", !!apiKey);
+    console.log("=== DEBUG API KEY ===");
+    console.log("API Key exists:", !!apiKey);
+    console.log("API Key length:", apiKey?.length);
+    console.log("API Key starts with:", apiKey?.substring(0, 20));
+    console.log("API Key ends with:", apiKey?.substring(apiKey?.length - 20));
+    
+    // Vérifier les caractères problématiques
+    if (apiKey) {
+      for (let i = 0; i < apiKey.length; i++) {
+        const char = apiKey.charCodeAt(i);
+        if (char > 127) {
+          console.log(`NON-ASCII char at index ${i}: code ${char}`);
+        }
+      }
+    }
     
     if (!apiKey) {
       return res.status(500).json({ error: "ANTHROPIC_API_KEY not set" });
     }
 
-    const prompt = "Give a brief 2-line coaching tip for Warhammer 40K.";
-
-    // Nettoyer le prompt pour éviter les erreurs d'encodage
-    const cleanPrompt = prompt
-      .replace(/[\u2018\u2019\u201C\u201D]/g, "'")  // Guillemets courbes -> droits
-      .replace(/[\u2013\u2014]/g, '-')               // Tirets cadratin -> tiret simple
-      .replace(/[^\x00-\x7F]/g, '');                 // Supprime tout caractère non-ASCII
-
-    console.log("Original prompt length:", prompt.length);
-    console.log("Cleaned prompt length:", cleanPrompt.length);
-    console.log("Cleaned prompt:", cleanPrompt.substring(0, 100));
+    const prompt = "Test";
 
     console.log("Calling Anthropic API...");
     
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json; charset=utf-8",
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
         model: "claude-3-5-sonnet-20241022",
-        max_tokens: 500,
+        max_tokens: 100,
         messages: [
           {
             role: "user",
-            content: cleanPrompt,  // Utiliser le prompt nettoyé
+            content: prompt,
           },
         ],
       }),
@@ -44,17 +48,15 @@ module.exports = async function handler(req, res) {
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error("Anthropic error:", errorData);
+      console.error("Anthropic error:", errorData.substring(0, 500));
       return res.status(response.status).json({ 
         error: "Anthropic API error",
-        details: errorData.substring(0, 200)
+        status: response.status
       });
     }
 
     const data = await response.json();
-    console.log("Response received");
-    
-    const analysis = data.content[0]?.text || "No analysis generated";
+    const analysis = data.content[0]?.text || "No response";
     
     return res.status(200).json({ analysis });
     
