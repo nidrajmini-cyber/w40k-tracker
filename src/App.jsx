@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
+import BattleReportForm from "./BattleReportForm";
 
 const supabase = createClient(
   "https://khmbmhmkmwjaljvicrsz.supabase.co",
@@ -542,6 +543,7 @@ function BatailleDetail({ bataille, onClose, onEdit, onDelete }) {
   const [unites, setUnites] = useState([]);
   const [coachAnalysis, setCoachAnalysis] = useState(bataille.coachanalysis || null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+  const [showReportForm, setShowReportForm] = useState(false);
 
   useEffect(() => {
     supabase.from("w40k_secondaires").select("*").eq("bataille_id", bataille.id).then(({data}) => setSecondaires(data||[]));
@@ -679,6 +681,12 @@ function BatailleDetail({ bataille, onClose, onEdit, onDelete }) {
           <button className="btn btn-danger btn-sm" onClick={()=>onDelete(bataille.id)}>🗑 Supprimer</button>
           <button className="btn btn-ghost" onClick={onClose}>Fermer</button>
           <button 
+            className="btn btn-success btn-sm"
+            onClick={() => setShowReportForm(true)}
+          >
+            📋 Retour de partie
+          </button>
+          <button 
             className="btn btn-primary btn-sm" 
             onClick={handleCoachAnalysis}
             disabled={loadingAnalysis}
@@ -689,6 +697,34 @@ function BatailleDetail({ bataille, onClose, onEdit, onDelete }) {
           <button className="btn btn-primary btn-sm" onClick={()=>onEdit(bataille)}>✏ Modifier</button>
         </div>
       </div>
+
+      {/* MODAL FORMULAIRE RETOUR */}
+      {showReportForm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{ maxWidth: '900px', width: '100%' }}>
+            <BattleReportForm
+              battleId={bataille.id}
+              onSave={(data) => {
+                console.log('Rapport sauvegardé:', data);
+                setShowReportForm(false);
+              }}
+              onClose={() => setShowReportForm(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
