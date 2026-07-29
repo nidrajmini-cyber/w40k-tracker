@@ -553,18 +553,25 @@ function BatailleDetail({ bataille, onClose, onEdit, onDelete }) {
   const handleCoachAnalysis = async () => {
     setLoadingAnalysis(true);
     try {
+      console.log("🧠 Calling coach API with gameId:", bataille.id);
       const response = await fetch("/api/coach-analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ gameId: bataille.id }),
       });
+      console.log("📡 Response status:", response.status);
       const data = await response.json();
+      console.log("📦 Response data:", data);
       if (data.analysis) {
+        console.log("✅ Analysis received, setting state...");
         setCoachAnalysis(data.analysis);
+      } else {
+        console.error("❌ No analysis in response", data);
+        alert("Pas d'analyse reçue. Détails: " + JSON.stringify(data));
       }
     } catch (error) {
-      console.error("Coach API error:", error);
-      alert("Erreur lors de l'analyse du coach");
+      console.error("❌ Coach API error:", error);
+      alert("Erreur lors de l'analyse du coach: " + error.message);
     } finally {
       setLoadingAnalysis(false);
     }
