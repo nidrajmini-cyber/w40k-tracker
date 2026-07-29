@@ -19,16 +19,21 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
     lecon_principale: '',
     
     // NIVEAU 2 - COMPLET
-    cadre: 'Club',
-    liste_adverse: '',
     t1_objectifs: '',
     t1_execution: '',
-    t1_resultat: 'Oui',
-    t1_regrets: '',
     t1_adv_plan: '',
     t1_adv_menace: '',
-    t2_resume: '',
-    t3_resume: '',
+    
+    t2_objectifs: '',
+    t2_execution: '',
+    t2_adv_plan: '',
+    t2_adv_menace: '',
+    
+    t3_objectifs: '',
+    t3_execution: '',
+    t3_adv_plan: '',
+    t3_adv_menace: '',
+    
     decision_1: '',
     decision_1_alt: '',
     decision_1_verdict: 'Bonne',
@@ -46,6 +51,10 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
     notes_libres: '',
     confiance_prochaine: 50,
   });
+  
+  const [secondaires, setSecondaires] = useState([
+    { nom: '', points_gagnes: 0, points_max: 0 }
+  ]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -69,11 +78,25 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
         }
         
         if (level === '2') {
-          notes += `\n\n═ DETAILS NIVEAU 2 ═\n`;
-          notes += `T1 OBJECTIFS: ${formData.t1_objectifs}\n`;
-          notes += `T1 EXECUTION: ${formData.t1_execution}\n`;
-          notes += `T1 PLAN ADVERSE: ${formData.t1_adv_plan}\n`;
-          notes += `DECISIONS CLÉS:\n`;
+          notes += `\n\n═ T1 ═\n`;
+          notes += `OBJECTIFS: ${formData.t1_objectifs}\n`;
+          notes += `EXECUTION: ${formData.t1_execution}\n`;
+          notes += `PLAN ADVERSE: ${formData.t1_adv_plan}\n`;
+          notes += `MENACE ADV: ${formData.t1_adv_menace}\n`;
+          
+          notes += `\n═ T2 ═\n`;
+          notes += `OBJECTIFS: ${formData.t2_objectifs}\n`;
+          notes += `EXECUTION: ${formData.t2_execution}\n`;
+          notes += `PLAN ADVERSE: ${formData.t2_adv_plan}\n`;
+          notes += `MENACE ADV: ${formData.t2_adv_menace}\n`;
+          
+          notes += `\n═ T3 ═\n`;
+          notes += `OBJECTIFS: ${formData.t3_objectifs}\n`;
+          notes += `EXECUTION: ${formData.t3_execution}\n`;
+          notes += `PLAN ADVERSE: ${formData.t3_adv_plan}\n`;
+          notes += `MENACE ADV: ${formData.t3_adv_menace}\n`;
+          
+          notes += `\n═ DECISIONS ═\n`;
           notes += `- ${formData.decision_1}\n`;
           if (formData.decision_2) notes += `- ${formData.decision_2}\n`;
           notes += `\nNOTES: ${formData.notes_libres}`;
@@ -85,7 +108,7 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
           .insert([{
             date: new Date().toISOString().split('T')[0],
             adversaire_faction: formData.adversaire_faction,
-            liste_id: null, // À lier manuellement si nécessaire
+            liste_id: null,
             mission_principale: formData.mission,
             premier_joueur: formData.premier_joueur,
             score_moi: parseInt(formData.score_moi),
@@ -98,17 +121,43 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
           .select();
 
         if (error) {
-          console.error('Erreur Supabase:', error);
+          console.error('Erreur Supabase bataille:', error);
           alert(`❌ Erreur: ${error.message}`);
           return;
         }
 
-        console.log('✅ Partie créée:', data);
+        const battle = data[0];
+        console.log('✅ Bataille créée:', battle);
+
+        // Créer les secondaires si présents
+        if (secondaires.length > 0 && secondaires.some(s => s.nom)) {
+          const secondairesData = secondaires
+            .filter(s => s.nom)
+            .map(s => ({
+              bataille_id: battle.id,
+              joueur: 'Moi',
+              nom_secondaire: s.nom,
+              points_gagnes: parseInt(s.points_gagnes) || 0,
+              points_max: parseInt(s.points_max) || 0,
+              notes: ''
+            }));
+
+          const { error: secError } = await supabase
+            .from('w40k_secondaires')
+            .insert(secondairesData);
+
+          if (secError) {
+            console.error('Erreur secondaires:', secError);
+            alert(`⚠️ Bataille créée mais erreur secondaires: ${secError.message}`);
+          } else {
+            console.log('✅ Secondaires créés:', secondairesData.length);
+          }
+        }
+
         alert(`✅ Partie créée vs ${formData.adversaire_faction}!`);
         if (onSave) onSave(data[0]);
         if (onClose) onClose();
       } else {
-        // Mode rapport (pas encore implémenté)
         console.log('Sauvegarde rapport:', { battleId, level, formData });
         if (onSave) onSave({ battleId, level, ...formData });
         alert(`✅ Rapport niveau ${level} sauvegardé!`);
@@ -678,6 +727,311 @@ const BattleReportForm = ({ mode = 'create', battleId, onSave, onClose, supabase
                   minHeight: '100px'
                 }}
               />
+            </div>
+
+            <hr style={{ borderColor: '#c9a84c', opacity: 0.3, marginTop: '24px' }} />
+            
+            <div style={{ 
+              background: '#3a2a1a', 
+              padding: '16px', 
+              borderRadius: '8px',
+              borderLeft: '4px solid #c9a84c',
+              marginTop: '12px'
+            }}>
+              <h4 style={{ margin: '0 0 12px 0', color: '#c9a84c' }}>T2 - Ton T2</h4>
+              
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Objectifs</label>
+              <input
+                type="text"
+                name="t2_objectifs"
+                value={formData.t2_objectifs}
+                onChange={handleChange}
+                placeholder="Qu'est-ce que tu voulais faire"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit',
+                  marginBottom: '12px'
+                }}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Exécution</label>
+              <input
+                type="text"
+                name="t2_execution"
+                value={formData.t2_execution}
+                onChange={handleChange}
+                placeholder="Qu'est-ce que tu as fait réellement"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit',
+                  marginBottom: '12px'
+                }}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Plan adverse</label>
+              <input
+                type="text"
+                name="t2_adv_plan"
+                value={formData.t2_adv_plan}
+                onChange={handleChange}
+                placeholder="Qu'est-ce que l'adversaire a cherché à faire"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit',
+                  marginBottom: '12px'
+                }}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Menace adverse</label>
+              <input
+                type="text"
+                name="t2_adv_menace"
+                value={formData.t2_adv_menace}
+                onChange={handleChange}
+                placeholder="Quelle menace l'adversaire a posée"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            <div style={{ 
+              background: '#3a2a1a', 
+              padding: '16px', 
+              borderRadius: '8px',
+              borderLeft: '4px solid #c9a84c',
+              marginTop: '12px'
+            }}>
+              <h4 style={{ margin: '0 0 12px 0', color: '#c9a84c' }}>T3 - Ton T3</h4>
+              
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Objectifs</label>
+              <input
+                type="text"
+                name="t3_objectifs"
+                value={formData.t3_objectifs}
+                onChange={handleChange}
+                placeholder="Qu'est-ce que tu voulais faire"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit',
+                  marginBottom: '12px'
+                }}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Exécution</label>
+              <input
+                type="text"
+                name="t3_execution"
+                value={formData.t3_execution}
+                onChange={handleChange}
+                placeholder="Qu'est-ce que tu as fait réellement"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit',
+                  marginBottom: '12px'
+                }}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Plan adverse</label>
+              <input
+                type="text"
+                name="t3_adv_plan"
+                value={formData.t3_adv_plan}
+                onChange={handleChange}
+                placeholder="Qu'est-ce que l'adversaire a cherché à faire"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit',
+                  marginBottom: '12px'
+                }}
+              />
+
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Menace adverse</label>
+              <input
+                type="text"
+                name="t3_adv_menace"
+                value={formData.t3_adv_menace}
+                onChange={handleChange}
+                placeholder="Quelle menace l'adversaire a posée"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: '#1a1a1a',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  color: '#e0e0e0',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            <div style={{ 
+              background: '#2a2a2a', 
+              padding: '16px', 
+              borderRadius: '8px',
+              borderLeft: '4px solid #c9a84c',
+              marginTop: '12px'
+            }}>
+              <h4 style={{ margin: '0 0 12px 0', color: '#c9a84c' }}>🎯 Tes missions secondaires</h4>
+              
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                fontSize: '14px'
+              }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #c9a84c' }}>
+                    <th style={{ padding: '8px', textAlign: 'left', color: '#c9a84c' }}>Nom secondaire</th>
+                    <th style={{ padding: '8px', textAlign: 'center', color: '#c9a84c' }}>Points</th>
+                    <th style={{ padding: '8px', textAlign: 'center', color: '#c9a84c' }}>Max</th>
+                    <th style={{ padding: '8px', textAlign: 'center', color: '#c9a84c' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {secondaires.map((sec, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #444' }}>
+                      <td style={{ padding: '8px' }}>
+                        <input
+                          type="text"
+                          value={sec.nom}
+                          onChange={(e) => {
+                            const newSec = [...secondaires];
+                            newSec[idx].nom = e.target.value;
+                            setSecondaires(newSec);
+                          }}
+                          placeholder="Ex: Incursion, Reconnaissance..."
+                          style={{
+                            width: '100%',
+                            padding: '6px',
+                            background: '#1a1a1a',
+                            border: '1px solid #555',
+                            borderRadius: '4px',
+                            color: '#e0e0e0',
+                            fontFamily: 'inherit'
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: '8px' }}>
+                        <input
+                          type="number"
+                          min="0"
+                          max="20"
+                          value={sec.points_gagnes}
+                          onChange={(e) => {
+                            const newSec = [...secondaires];
+                            newSec[idx].points_gagnes = e.target.value;
+                            setSecondaires(newSec);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '6px',
+                            background: '#1a1a1a',
+                            border: '1px solid #555',
+                            borderRadius: '4px',
+                            color: '#e0e0e0',
+                            textAlign: 'center',
+                            fontFamily: 'inherit'
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: '8px' }}>
+                        <input
+                          type="number"
+                          min="0"
+                          max="20"
+                          value={sec.points_max}
+                          onChange={(e) => {
+                            const newSec = [...secondaires];
+                            newSec[idx].points_max = e.target.value;
+                            setSecondaires(newSec);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '6px',
+                            background: '#1a1a1a',
+                            border: '1px solid #555',
+                            borderRadius: '4px',
+                            color: '#e0e0e0',
+                            textAlign: 'center',
+                            fontFamily: 'inherit'
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: '8px', textAlign: 'center' }}>
+                        {secondaires.length > 1 && (
+                          <button
+                            onClick={() => {
+                              setSecondaires(secondaires.filter((_, i) => i !== idx));
+                            }}
+                            style={{
+                              background: '#f87171',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              <button
+                onClick={() => setSecondaires([...secondaires, { nom: '', points_gagnes: 0, points_max: 0 }])}
+                style={{
+                  marginTop: '12px',
+                  padding: '8px 16px',
+                  background: '#3a3a3a',
+                  color: '#c9a84c',
+                  border: '1px solid #c9a84c',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                + Ajouter secondaire
+              </button>
             </div>
           </>
         )}
